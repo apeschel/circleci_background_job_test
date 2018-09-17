@@ -1,0 +1,44 @@
+version: 2
+
+jobs:
+  background-sleep:
+    docker:
+      - image: circleci/python:3.7.0
+    steps:
+      - run:
+          name: Does CircleCI kill jobs that have been backgrounded in the shell?
+          command: |
+            sleep 30 &
+            true
+            wait
+
+  background-networking:
+    docker:
+      - image: circleci/python:3.7.0
+    steps:
+      - run:
+          name: Install Netcat
+          command: |
+            sudo apt update
+            sudo apt install netcat.openbsd
+
+      - run:
+          name: Test Background Networking
+          command: |
+            output="test"
+            result="$({
+              nc -q 1 -l localhost 8125 &
+              echo "$output" | nc -w 1 localhost 8125
+              wait
+            })"
+            echo "$result" | grep "$output"
+
+workflows:
+  version: 2
+
+  test-backgrounding:
+    jobs:
+      - background-sleep
+      - background-networking
+
+# vim: sw=2:sts=2:et
